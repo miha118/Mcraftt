@@ -1,0 +1,308 @@
+Mcraftt.html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MCraft — полный экран + рабочий Back to game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0f1a;
+            font-family: system-ui, 'Segoe UI', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .game-container {
+            max-width: 1280px;
+            width: 100%;
+            background: #10141e;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #2ecc7133;
+            transition: all 0.2s;
+        }
+
+        .game-menu {
+            background: #0c101c;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid #2ecc7144;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2ecc71, #f1c40f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background: #1e2a36;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-play {
+            background: #2ecc71;
+            color: #000;
+            box-shadow: 0 0 6px #2ecc71;
+        }
+
+        .btn-play:hover {
+            background: #f1c40f;
+            transform: scale(1.02);
+        }
+
+        .btn-fs {
+            background: #1e2a36;
+        }
+        .btn-fs:hover {
+            background: #3a4a5a;
+        }
+
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: none;
+            display: block;
+            background: #000;
+        }
+
+        .loading-tip {
+            background: #1a2a1f;
+            color: #aaffaa;
+            text-align: center;
+            padding: 6px;
+            font-size: 0.75rem;
+            border-top: 1px solid #2ecc7144;
+        }
+
+        /* для полноэкранного режима */
+        .game-container:-webkit-full-screen {
+            max-width: 100%;
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+        }
+        .game-container:fullscreen {
+            max-width: 100%;
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+        }
+        .game-container:-webkit-full-screen .game-frame {
+            height: calc(100vh - 70px);
+        }
+        .game-container:fullscreen .game-frame {
+            height: calc(100vh - 70px);
+        }
+
+        @media (max-width: 700px) {
+            .game-frame {
+                height: 500px;
+            }
+            .game-menu {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="gameContainer">
+    <div class="game-menu">
+        <div class="logo">🎮 MCRAFT | Рабочий Back to game</div>
+        <div class="buttons">
+            <button class="btn btn-play" id="reloadGameBtn">▶ ПЕРЕЗАПУСТИТЬ</button>
+            <button class="btn btn-fs" id="fullscreenBtn">⛶ FULLSCREEN</button>
+        </div>
+    </div>
+    <iframe id="gameIframe" class="game-frame" 
+            src="https://burritoedition.github.io/emu/Minecraft/web/index.html"
+            allowfullscreen>
+    </iframe>
+    <div class="loading-tip">
+        💡 Совет: при создании нового мира подождите 1–2 минуты — чанки генерируются.
+    </div>
+</div>
+
+<script>
+    const iframe = document.getElementById('gameIframe');
+    const reloadBtn = document.getElementById('reloadGameBtn');
+    const fsBtn = document.getElementById('fullscreenBtn');
+    const container = document.getElementById('gameContainer');
+
+    // Функция: принудительно нажимаем кнопку "Back to game" внутри iframe
+    function pressBackToGame() {
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (!doc) return false;
+
+            // Ищем кнопку с текстом "Back to game" или похожим
+            const buttons = doc.querySelectorAll('button, .button, .btn, a, div[role="button"]');
+            let pressed = false;
+            
+            for (let btn of buttons) {
+                const text = (btn.innerText || btn.textContent || '').toLowerCase();
+                if (text.includes('back to game') || 
+                    text.includes('back') && text.includes('game') ||
+                    text === 'back' ||
+                    btn.className?.toLowerCase().includes('back')) {
+                    btn.click();
+                    pressed = true;
+                    console.log('MCraft: нажата кнопка Back to game');
+                    break;
+                }
+            }
+            
+            // Альтернатива: эмуляция клавиши Escape (часто закрывает меню)
+            const escEvent = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27 });
+            doc.dispatchEvent(escEvent);
+            
+            // Также кликаем по canvas, чтобы сфокусироваться на игре
+            const canvas = doc.querySelector('canvas');
+            if (canvas) canvas.click();
+            
+            return pressed;
+        } catch(e) {
+            console.log('MCraft: доступ к iframe ограничен');
+            return false;
+        }
+    }
+
+    // Функция: убираем стартовое меню и нажимаем Play при создании нового мира
+    function skipStartMenu() {
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (!doc) return;
+            
+            // Скрываем любые меню настроек
+            const menus = doc.querySelectorAll('.menu, .start-menu, .settings-menu, .options, .gui, .main-menu, .startup-screen, [class*="menu"], [class*="start"]');
+            menus.forEach(menu => {
+                if (menu && menu.style) menu.style.display = 'none';
+            });
+            
+            // Ищем и нажимаем кнопку Play / Start Game / New World / Singleplayer
+            const playBtns = doc.querySelectorAll('button, .button, .btn, a');
+            for (let btn of playBtns) {
+                const text = (btn.innerText || btn.textContent || '').toLowerCase();
+                if (text.includes('play') || 
+                    text.includes('start') || 
+                    text.includes('new game') || 
+                    text.includes('singleplayer') ||
+                    text.includes('create world') ||
+                    text.includes('new world')) {
+                    btn.click();
+                    console.log('MCraft: нажата кнопка запуска игры');
+                    break;
+                }
+            }
+            
+            // Клик по canvas для фокуса
+            const canvas = doc.querySelector('canvas');
+            if (canvas) canvas.click();
+            
+        } catch(e) {
+            console.log('MCraft: стандартный режим');
+        }
+    }
+
+    // Функция: полноэкранный режим без багов
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+                console.warn(`Fullscreen error: ${err.message}`);
+                // fallback: пробуем через iframe
+                if (iframe.requestFullscreen) iframe.requestFullscreen();
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // При загрузке iframe
+    iframe.addEventListener('load', () => {
+        setTimeout(() => {
+            skipStartMenu();          // убираем меню при старте
+            pressBackToGame();        // нажимаем Back to game, если нужно
+        }, 1000);
+        
+        // Повторная попытка через 3 секунды (на случай медленной загрузки)
+        setTimeout(() => {
+            pressBackToGame();
+        }, 3500);
+        
+        // И ещё через 6 секунд для новых миров
+        setTimeout(() => {
+            pressBackToGame();
+            skipStartMenu();
+        }, 6000);
+    });
+
+    // Перезагрузка игры
+    reloadBtn.addEventListener('click', () => {
+        iframe.src = iframe.src;
+        setTimeout(() => {
+            skipStartMenu();
+            pressBackToGame();
+        }, 2000);
+        setTimeout(() => {
+            pressBackToGame();
+        }, 5000);
+    });
+
+    // Полноэкранный режим — работает без багов
+    fsBtn.addEventListener('click', toggleFullscreen);
+    
+    // Обработка ESC для выхода из fullscreen (чтобы не ломать игру)
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            // Возвращаем фокус в iframe после выхода из fullscreen
+            setTimeout(() => {
+                iframe.focus();
+                pressBackToGame();
+            }, 100);
+        }
+    });
+
+    // Автофокус на iframe при загрузке страницы
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            iframe.focus();
+            pressBackToGame();
+        }, 2000);
+    });
+
+    console.log('MCraft: Fullscreen и Back to game исправлены');
+</script>
+
+</body>
+</html>
